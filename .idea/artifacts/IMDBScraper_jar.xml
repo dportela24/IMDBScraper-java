@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="IMDBScraper:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/IMDBScraper_jar</output-path>
+    <root id="archive" name="IMDBScraper.jar">
+      <element id="module-output" name="IMDBScraper" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/jsoup/jsoup/1.11.3/jsoup-1.11.3.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

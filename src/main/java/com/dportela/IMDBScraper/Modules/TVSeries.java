@@ -1,5 +1,8 @@
 package com.dportela.IMDBScraper.Modules;
 
+import com.dportela.IMDBScraper.Exceptions.TVSeriesNotFoundException;
+import lombok.Getter;
+import lombok.ToString;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -8,12 +11,11 @@ import org.jsoup.select.Elements;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+@Getter @ToString
 public class TVSeries {
     final static private String url = "https://www.imdb.com/title/%s";
     private String imdbID;
@@ -27,13 +29,13 @@ public class TVSeries {
     private int ratingCount;
     private String poster;
     private int numberOfSeasons;
-    private Map<Integer, Season> seasons;
+    private List<Season> seasons;
 
     public TVSeries(String imdbID) {
         this.imdbID = imdbID;
     }
 
-    public void scrap(){
+    public void scrap() throws TVSeriesNotFoundException {
         try {
             // Fetch html
             Document doc = Jsoup.connect(getURL())
@@ -41,18 +43,18 @@ public class TVSeries {
                     .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.66 Safari/537.36")
                     .get();
 
-            // Check if valid request
+            // Check if requested item is a tv series
             String type = doc.selectFirst("meta[property=og:type]").attr("content");
-            if (type.isEmpty() || !type.equals("video.tv_show"))
-            {
-                throw new IOException("TV Series not found...");
+            if (type.isEmpty() || !type.equals("video.tv_show")) {
+                throw new Exception();
             }
 
             scrapSeriesData(doc);
             scrapSeasons();
+        } catch (IOException e) { //JSoup exception
+            throw new TVSeriesNotFoundException("Could not fetch series html");
         } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Error processing tv series...");
+            throw new TVSeriesNotFoundException();
         }
     }
 
@@ -114,53 +116,31 @@ public class TVSeries {
     }
 
     private void scrapSeasons() {
-        try {
-            seasons = new ConcurrentHashMap<>();
-            ArrayList<Integer> numbers_list = new ArrayList<>(numberOfSeasons);
-            for(int i = 1; i <= numberOfSeasons; i++){
-                numbers_list.add(i);
-            }
-            seasons = numbers_list
-                    .parallelStream()
-                    .map( season_number -> {
-                        Season season = new Season();
-                        season.scrap(imdbID, season_number);
-                        return season;
-                    })
-                    .filter(Season::isValid)
-                    .collect(Collectors.toConcurrentMap(
-                            Season::getNumber,
-                            season -> season
-                    ));
+        seasons = new ArrayList<>();
 
-            // Newer seasons can already have a webpage but no info, resulting in invalid entries.
-            // Readjust numberOfSeasons after removing invalid entries.
-            numberOfSeasons = seasons.size();
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Error processing season");
+        // Create a Integer list with range [1, number of seasons]
+        ArrayList<Integer> numbers_list = new ArrayList<>(numberOfSeasons);
+        for(int i = 1; i <= numberOfSeasons; i++){
+            numbers_list.add(i);
         }
+
+        // Map each list entry to a season object, filter by validation and collect as a map
+        seasons = numbers_list
+                .parallelStream()
+                .map( season_number -> {
+                    Season season = new Season();
+                    season.scrap(imdbID, season_number);
+                    return season;
+                })
+                .filter(Season::isValid)
+                .collect(Collectors.toList());
+
+        // Newer seasons can already have a webpage but no info, resulting in invalid entries.
+        // Readjust numberOfSeasons after removing invalid entries.
+        numberOfSeasons = seasons.size();
     }
 
     private String getURL() {
         return String.format(url, imdbID);
-    }
-
-    @Override
-    public String toString() {
-        return "TVSeries{" +
-                "imdbID='" + imdbID + '\'' +
-                ", name='" + name + '\'' +
-                ", originalName='" + originalName + '\'' +
-                ", summary='" + summary + '\'' +
-                ", episodeDuration='" + episodeDuration + '\'' +
-                ", runTime='" + runtime + '\'' +
-                ", genres=" + genres +
-                ", ratingValue=" + ratingValue +
-                ", ratingCount=" + ratingCount +
-                ", poster='" + poster + '\'' +
-                ", numberOfSeasons=" + numberOfSeasons +
-                ", seasons=" + seasons +
-                '}';
     }
 }

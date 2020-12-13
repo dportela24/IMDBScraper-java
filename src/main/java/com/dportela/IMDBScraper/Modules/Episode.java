@@ -1,10 +1,13 @@
 package com.dportela.IMDBScraper.Modules;
 
+import lombok.Getter;
+import lombok.ToString;
 import org.jsoup.nodes.Element;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Getter @ToString
 public class Episode {
     private int number;
     private String imdbID;
@@ -19,11 +22,12 @@ public class Episode {
     }
 
     public void scrapData(Element episode_soup) {
-        Element ratingValue_str = episode_soup.getElementsByClass("ipl-rating-star__rating").first();
-        Element ratingCount_str = episode_soup.getElementsByClass("ipl-rating-star__total-votes").first();
+        // Fetch rating value and count elements
+        Element ratingValue_ele = episode_soup.getElementsByClass("ipl-rating-star__rating").first();
+        Element ratingCount_ele = episode_soup.getElementsByClass("ipl-rating-star__total-votes").first();
 
-        // If no rating episode entry exists, but there's no useful information -> Do not proceed
-        if (ratingCount_str == null || ratingValue_str == null) {
+        // If no rating episode, episode already entry exists but there's no useful information -> Do not proceed
+        if (ratingCount_ele == null || ratingValue_ele == null) {
             return;
         }
 
@@ -40,10 +44,10 @@ public class Episode {
         name = episode_soup.selectFirst("a[itemprop=name]").ownText();
 
         // Fetch rating value
-        ratingValue = Double.parseDouble(ratingValue_str.ownText());
+        ratingValue = Double.parseDouble(ratingValue_ele.ownText());
 
         // Fetch rating count
-        ratingCount = Integer.parseInt(ratingCount_str.ownText().substring(1, ratingCount_str.ownText().length() - 1).replace(",", ""));
+        ratingCount = Integer.parseInt(ratingCount_ele.ownText().substring(1, ratingCount_ele.ownText().length() - 1).replace(",", ""));
 
         // Fetch air date
         airdate = episode_soup.getElementsByClass("airdate").first().ownText();
@@ -52,24 +56,11 @@ public class Episode {
         summary = episode_soup.getElementsByClass("item_description").first().ownText();
     }
 
-    public boolean isValid() {
+    protected boolean isValid() {
         return number != -1;
     }
 
     public int getNumber() {
         return this.number;
-    }
-
-    @Override
-    public String toString() {
-        return "Episode{" +
-                "number=" + number +
-                ", imdbID='" + imdbID + '\'' +
-                ", name='" + name + '\'' +
-                ", airdate='" + airdate + '\'' +
-                ", ratingValue=" + ratingValue +
-                ", ratingCount=" + ratingCount +
-                ", summary='" + summary + '\'' +
-                '}';
     }
 }
