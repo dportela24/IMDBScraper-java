@@ -46,14 +46,14 @@ public class TVSeries {
             // Check if requested item is a tv series
             String type = doc.selectFirst("meta[property=og:type]").attr("content");
             if (type.isEmpty() || !type.equals("video.tv_show")) {
-                throw new Exception();
+                throw new TVSeriesNotFoundException();
             }
 
             scrapSeriesData(doc);
             scrapSeasons();
         } catch (IOException e) { //JSoup exception
             throw new TVSeriesNotFoundException("Could not fetch series html");
-        } catch (Exception e) {
+        } catch (TVSeriesNotFoundException e) {
             throw new TVSeriesNotFoundException();
         }
     }
@@ -72,47 +72,55 @@ public class TVSeries {
         originalName = originalNameElements.isEmpty() ? name : originalNameElements.first().text();
 
         // Scrap summary
-        summary = doc.getElementsByClass("summary_text").first().text();
+        Elements summaryElements = doc.getElementsByClass("summary_text");
+        summary = !summaryElements.isEmpty() ? summaryElements.first().text() : "";
 
         // Scrap episode duration
-        episodeDuration = titleBlock.selectFirst("time").text();
+        Element episodeDurationElement = titleBlock.selectFirst("time");
+        episodeDuration = episodeDurationElement != null ? episodeDurationElement.text() : "";
 
         // Scrap runtime
-        String runtime_info = titleBlock.selectFirst("a[title=\"See more release dates\"]").text();
+        Element runtimeElement = titleBlock.selectFirst("a[title=\"See more release dates\"]");
+        String runtimeInfo = runtimeElement != null ? runtimeElement.text() : "";
         Pattern pattern = Pattern.compile("\\d+–?(\\d+)?");
-        Matcher matcher = pattern.matcher(runtime_info);
+        Matcher matcher = pattern.matcher(runtimeInfo);
         runtime = matcher.find() ? matcher.group() : "";
 
         // Scrap genres
-        genres = titleBlock.getElementsByClass("subtext").first().children()
-                .stream()
-                .filter(element -> element.hasAttr("href") && element.attr("href").contains("genres"))
-                .map(Element::text)
-                .collect(Collectors.toList());
+        //genres = titleBlock.getElementsByClass("subtext").first().children()
+        //        .stream()
+        //        .filter(element -> element.hasAttr("href") && element.attr("href").contains("genres"))
+        //        .map(Element::text)
+        //        .collect(Collectors.toList());
 
         // Scrap rating value
-        String ratingValue_str = titleBlock.select("span[itemprop=ratingValue]").text();
-        if (ratingValue_str.isEmpty()) {
+        Element ratingValueElement = titleBlock.selectFirst("span[itemprop=ratingValue]");
+        String ratingValueStr =  ratingValueElement != null ? ratingValueElement.text() : "";
+        if (ratingValueStr.isEmpty()) {
             ratingValue = -1;
         } else {
-            ratingValue = Double.parseDouble(ratingValue_str);
+            ratingValue = Double.parseDouble(ratingValueStr);
 
         }
 
         // Scrap rating count
-        String ratingCount_str = titleBlock.select("span[itemprop=ratingCount]").text();
-        if (ratingCount_str.isEmpty()) {
+        Element ratingCountElement = titleBlock.selectFirst("span[itemprop=ratingCount]");
+        String ratingCountStr = ratingCountElement != null ?  ratingCountElement.text() : "";
+        if (ratingCountStr.isEmpty()) {
             ratingCount = -1;
         } else {
-            ratingCount = Integer.parseInt(ratingCount_str.replace(",", ""));
+            ratingCount = Integer.parseInt(ratingCountStr.replace(",", ""));
         }
 
         // Scrap poster
-        poster = doc.getElementsByClass("poster").first().selectFirst("img").attr("src");
+        Element posterElement = doc.getElementsByClass("poster").first();
+        posterElement = posterElement != null ? posterElement.selectFirst("img") : null;
+        poster = posterElement.attr("src");
 
         // Scrap number of seasons
-        numberOfSeasons = Integer.parseInt(doc.getElementsByClass("seasons-and-year-nav").first()
-                .selectFirst("a").text());
+        Element seasonsElement = doc.selectFirst(".seasons-and-year-nav");
+        seasonsElement = seasonsElement != null ? seasonsElement.selectFirst("a") : null;
+        numberOfSeasons = seasonsElement != null ?  Integer.parseInt(seasonsElement.text()) : 0;
     }
 
     private void scrapSeasons() {
