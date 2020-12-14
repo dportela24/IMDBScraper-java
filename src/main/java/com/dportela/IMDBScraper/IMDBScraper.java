@@ -1,5 +1,6 @@
 package com.dportela.IMDBScraper;
 
+import com.dportela.IMDBScraper.Exceptions.ErrorProcessingTVSeriesException;
 import com.dportela.IMDBScraper.Exceptions.SeriesIdNotFoundException;
 import com.dportela.IMDBScraper.Exceptions.TVSeriesNotFoundException;
 import com.dportela.IMDBScraper.Modules.TVSeries;
@@ -15,7 +16,7 @@ public class IMDBScraper {
     final static private String search_url = "https://www.imdb.com/find?q=%s";
     public IMDBScraper(){}
 
-    public TVSeries scrap(String request) throws SeriesIdNotFoundException, TVSeriesNotFoundException {
+    public TVSeries scrap(String request) throws SeriesIdNotFoundException, TVSeriesNotFoundException, ErrorProcessingTVSeriesException {
         // Check if request is for id or name
         boolean isId = request.matches("tt\\d+");
         String series_id;

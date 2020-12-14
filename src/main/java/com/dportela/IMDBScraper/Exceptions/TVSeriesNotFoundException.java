@@ -1,6 +1,6 @@
 package com.dportela.IMDBScraper.Exceptions;
 
-public class TVSeriesNotFoundException extends Exception{
+public class TVSeriesNotFoundException extends RuntimeException{
     public TVSeriesNotFoundException() {
         super("TV series could not be found...");
     }

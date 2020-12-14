@@ -1,9 +1,12 @@
 package com.dportela.IMDBScraper.Modules;
 
+import com.dportela.IMDBScraper.Exceptions.ErrorProcessingEpisodeException;
+import com.dportela.IMDBScraper.Exceptions.ErrorProcessingSeasonException;
 import lombok.Getter;
 import lombok.ToString;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,7 +24,7 @@ public class Season {
         this.episodes = new ArrayList<>();
     }
 
-    public void scrap(String imdbId, int requested_season){
+    public void scrap(String imdbId, int requested_season) throws ErrorProcessingSeasonException {
         try {
             Document doc;
 
@@ -47,20 +50,24 @@ public class Season {
             episodes = doc.getElementsByClass("eplist").first().children()
                     .parallelStream()
                     .map( episode_soup -> {
-                        Episode episode = new Episode();
-                        episode.scrapData(episode_soup);
-                        return episode;
+                        return scrapEpisode(episode_soup);
                     })
                     .filter(Episode::isValid)
                     .collect(Collectors.toList());
         } catch (IOException e) { //Jsoup exception
-            System.out.println("Could not fetch season number " + requested_season);
+            throw new ErrorProcessingSeasonException("Could not fetch season number " + requested_season);
         } catch (Exception e) {
-            System.out.println("Error parsing season " + requested_season + "." + e.getMessage());
+            throw new ErrorProcessingSeasonException("Error parsing season " + requested_season + "." + e.getMessage());
         }
 
     }
 
+    private Episode scrapEpisode(Element episode_soup) throws ErrorProcessingEpisodeException{
+        Episode episode = new Episode();
+        episode.scrapData(episode_soup);
+
+        return episode;
+    }
     protected boolean isValid() {
         return number > 0 && !episodes.isEmpty();
     }

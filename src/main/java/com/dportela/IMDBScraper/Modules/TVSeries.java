@@ -1,5 +1,7 @@
 package com.dportela.IMDBScraper.Modules;
 
+import com.dportela.IMDBScraper.Exceptions.ErrorProcessingSeasonException;
+import com.dportela.IMDBScraper.Exceptions.ErrorProcessingTVSeriesException;
 import com.dportela.IMDBScraper.Exceptions.TVSeriesNotFoundException;
 import lombok.Getter;
 import lombok.ToString;
@@ -55,6 +57,8 @@ public class TVSeries {
             throw new TVSeriesNotFoundException("Could not fetch series html");
         } catch (TVSeriesNotFoundException e) {
             throw new TVSeriesNotFoundException();
+        } catch (ErrorProcessingSeasonException e) {
+            throw new ErrorProcessingTVSeriesException("Error fetching " + name, e);
         }
     }
 
