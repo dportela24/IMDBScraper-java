@@ -29,6 +29,7 @@ public class Season {
             doc = Jsoup.connect(buildSeasonString(imdbId, requested_season))
                     .header("Accept-Language", "en")
                     .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.66 Safari/537.36")
+                    .maxBodySize(0).timeout(0)
                     .get();
 
             // Check which season was fetched
@@ -53,9 +54,9 @@ public class Season {
                     .filter(Episode::isValid)
                     .collect(Collectors.toList());
         } catch (IOException e) { //Jsoup exception
-            System.out.println("Could not fetch season number" + requested_season);
+            System.out.println("Could not fetch season number " + requested_season);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            System.out.println("Error parsing season " + requested_season + "." + e.getMessage());
         }
 
     }
